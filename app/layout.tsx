@@ -7,6 +7,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import EmotionRegistry from './registry';
 import MuiThemeProvider from './theme-provider';
+import AuthProvider from './auth-provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,9 +35,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-dvh w-full`}
       >
         <EmotionRegistry>
-          <MuiThemeProvider>
-            {children}
-          </MuiThemeProvider>
+          <AuthProvider>
+            <MuiThemeProvider>
+              {children}
+            </MuiThemeProvider>
+          </AuthProvider>
         </EmotionRegistry>
       </body>
     </html>
