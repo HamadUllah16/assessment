@@ -1,3 +1,4 @@
+import { URL_CONSTANTS } from "@/app/lib/url-constants";
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -31,6 +32,34 @@ const handler = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
+      async signIn({ user, account }) {
+          if (account?.provider === "google" && user?.email && user?.name) {
+              try {
+                  const response = await fetch(URL_CONSTANTS.createOrUpdateUser, {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                          googleId: user.id,
+                          email: user.email,
+                          name: user.name,
+                      }),
+                  });
+
+                  if (!response.ok) {
+                      console.error("Failed to sync user with backend:", await response.text());
+                      return true;
+                  }
+
+                  const result = await response.json();
+                  console.log("User synced with backend:", result);
+              } catch (error) {
+                  console.error("Error syncing user with backend:", error);
+              }
+          }
+          return true;
+      },
     async session({ session, token }) {
       if (token?.sub && session?.user) {
         session.user.id = token.sub;
