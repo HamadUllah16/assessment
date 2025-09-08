@@ -5,13 +5,14 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import { signIn, signOut, useSession } from "next-auth/react";
+import UsersList from "./components/UsersList";
 
 export default function Home() {
   const { data: session, status } = useSession();
 
   return (
-    <Container className="justify-center items-center flex h-full">
-      <Stack spacing={2} alignItems="center">
+    <Container className="justify-between items-center flex flex-row h-full">
+      <Stack spacing={2} alignItems="end" justifyContent={"center"}>
         {status === "loading" && <Typography>Loading...</Typography>}
         {status !== "loading" && !session && (
           <>
@@ -37,6 +38,8 @@ export default function Home() {
           </>
         )}
       </Stack>
+
+      <UsersList />
     </Container>
   );
 }

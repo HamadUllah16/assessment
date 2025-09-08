@@ -4,4 +4,5 @@ const getUrl = (path: string) => `${BASE_URL}/${path}`;
 
 export const URL_CONSTANTS = {
     createOrUpdateUser: getUrl("users/create-or-update"),
+    getUsers: getUrl("users/"),
 }
