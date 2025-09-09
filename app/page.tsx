@@ -5,7 +5,6 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import { signIn, signOut, useSession } from "next-auth/react";
-import UsersList from "./components/UsersList";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -38,8 +37,6 @@ export default function Home() {
           </>
         )}
       </Stack>
-
-      <UsersList />
     </Container>
   );
 }
