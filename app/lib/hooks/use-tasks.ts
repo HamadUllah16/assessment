@@ -85,7 +85,7 @@ export function useCreateTask(userEmail: string | undefined) {
     onSettled: () => {
       if (!userEmail) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasksPaginated(userEmail, 0, 10) });
+      queryClient.invalidateQueries({ queryKey: ["tasks-paginated", userEmail] });
     },
   });
 }
