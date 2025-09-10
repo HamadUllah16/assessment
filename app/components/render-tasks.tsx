@@ -28,9 +28,36 @@ type RenderTasksProps = {
     userEmail: string;
 }
 
+function timeAgo(input: string | Date): string {
+    const date = typeof input === 'string' ? new Date(input) : input;
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+
+    const divisions: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
+        { amount: 60, name: 'second' },
+        { amount: 60, name: 'minute' },
+        { amount: 24, name: 'hour' },
+        { amount: 7, name: 'day' },
+        { amount: 4.34524, name: 'week' },
+        { amount: 12, name: 'month' },
+        { amount: Number.POSITIVE_INFINITY, name: 'year' }
+    ];
+
+    let duration = seconds;
+    for (let i = 0; i < divisions.length; i++) {
+        const division = divisions[i];
+        if (Math.abs(duration) < division.amount) {
+            return rtf.format(-Math.round(duration), division.name);
+        }
+        duration = duration / division.amount;
+    }
+    return rtf.format(0, 'second');
+}
+
 function RenderTasks({ userEmail }: RenderTasksProps) {
     const [page, setPage] = useState(0);
-    const pageSize = 10;
+    const pageSize = 4;
     const { data, isLoading } = useTasksPaginated(userEmail, page, pageSize);
     const tasks = (data?.tasks ?? []) as { id: string; title: string; done: boolean; userId: string; createdAt: Date }[];
     const total = data?.total ?? tasks.length;
@@ -203,7 +230,7 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                                     }
                                     secondary={
                                         <Typography variant="caption" color="text.secondary">
-                                            {new Date(task.createdAt).toLocaleDateString()}
+                                            {timeAgo(task.createdAt)}
                                         </Typography>
                                     }
                                 />

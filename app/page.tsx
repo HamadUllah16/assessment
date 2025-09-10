@@ -88,12 +88,15 @@ export default function Home() {
                 alignItems="center"
                 gap={1}
               >
-              <Avatar
+                <Avatar
                   src={session.user?.image ?? ""}
                   alt={session.user?.name ?? ""}
-                sx={{ width: 32, height: 32 }}
-              />
-                <Typography variant="body2">{session.user?.name ?? ""}</Typography>
+                  sx={{ width: 32, height: 32 }}
+                />
+                <Stack direction="column" gap={0} justifyContent={"center"}>
+                  <Typography variant="body2" lineHeight={1}>{session.user?.name ?? ""}</Typography>
+                  <Typography variant="caption" color="text.secondary">{session.user?.email ?? ""}</Typography>
+                </Stack>
               </Stack>
 
               <IconButton onClick={() => signOut()}>
