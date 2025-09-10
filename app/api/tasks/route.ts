@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTasks, createTask, CreateTaskData } from "@/app/lib/task";
+import { getTasks, createTask } from "@/app/lib/task";
 
 // GET /api/tasks - Get all tasks for a user
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
+        const userEmail = searchParams.get('userEmail');
 
-        if (!userId) {
+        if (!userEmail) {
             return NextResponse.json(
-                { error: "userId parameter is required" },
+                { error: "userEmail parameter is required" },
                 { status: 400 }
             );
         }
 
-        const tasks = await getTasks(userId);
+        const tasks = await getTasks(userEmail);
         
         return NextResponse.json(
-            { 
-                success: true, 
-                tasks 
+            {
+                success: true,
+                tasks
             },
             { status: 200 }
         );
@@ -35,12 +35,12 @@ export async function GET(request: NextRequest) {
 // POST /api/tasks - Create a new task
 export async function POST(request: NextRequest) {
     try {
-        const body: CreateTaskData = await request.json();
+        const body = await request.json();
         
         // Validate required fields
-        if (!body.title || !body.userId) {
+        if (!body.title || !body.userEmail) {
             return NextResponse.json(
-                { error: "Missing required fields: title and userId are required" },
+                { error: "Missing required fields: title and userEmail are required" },
                 { status: 400 }
             );
         }
@@ -55,13 +55,13 @@ export async function POST(request: NextRequest) {
 
         const task = await createTask({
             title: body.title.trim(),
-            userId: body.userId
+            userId: body.userEmail
         });
-        
+
         return NextResponse.json(
-            { 
-                success: true, 
-                task 
+            {
+                success: true,
+                task
             },
             { status: 201 }
         );

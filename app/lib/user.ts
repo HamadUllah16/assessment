@@ -21,7 +21,7 @@ export async function createOrUpdateUser(data: CreateOrUpdateUserData): Promise<
         });
 
         if (user) {
-            if (!user.googleId) {
+            if (!user.googleId && data.googleId) {
                 user = await prisma.user.update({
                     where: { id: user.id },
                     data: {
@@ -33,7 +33,7 @@ export async function createOrUpdateUser(data: CreateOrUpdateUserData): Promise<
         } else {
             user = await prisma.user.create({
                 data: {
-                    googleId: data.googleId,
+                    googleId: data.googleId || null,
                     email: data.email,
                     name: data.name
                 }
