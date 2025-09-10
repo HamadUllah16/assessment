@@ -7,6 +7,9 @@ const theme = createTheme({
   palette: {
     mode: 'light',
   },
+  shape: {
+    borderRadius: 12,
+  },
 });
 
 export default function MuiThemeProvider({
