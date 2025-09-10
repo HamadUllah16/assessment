@@ -4,10 +4,11 @@ import { updateTask, UpdateTaskData } from "@/app/lib/task";
 // PATCH /api/tasks/[id] - Update a task (mark as done)
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const taskId = params.id;
+        const { id } = await params;
+        const taskId = id;
         const body: UpdateTaskData = await request.json();
         
         // Validate required fields
