@@ -104,23 +104,52 @@ export function useToggleTask(userEmail: string | undefined) {
     },
     onMutate: async ({ taskId, currentDone }) => {
       if (!userEmail) return;
-      await queryClient.cancelQueries({ queryKey: queryKeys.tasks(userEmail) });
-      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks(userEmail));
+      const newDone = !currentDone;
+      // Cancel related queries
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: queryKeys.tasks(userEmail) }),
+        queryClient.cancelQueries({ queryKey: ["tasks-paginated", userEmail] }),
+      ]);
+
+      // Snapshot previous states
+      const previousFlat = queryClient.getQueryData<Task[]>(queryKeys.tasks(userEmail));
+      const previousPaginated = queryClient.getQueriesData({ queryKey: ["tasks-paginated", userEmail] });
+
+      // Optimistically update flat list
       queryClient.setQueryData<Task[]>(queryKeys.tasks(userEmail), (old) =>
-        (old ?? []).map((t) => (t.id === taskId ? { ...t, done: !currentDone } : t))
+        (old ?? []).map((t) => (t.id === taskId ? { ...t, done: newDone } as Task : t))
       );
-      return { previous } as const;
+
+      // Optimistically update all paginated pages for this user
+      previousPaginated.forEach(([key]) => {
+        queryClient.setQueryData<GetTasksResponse>(key as readonly unknown[], (old) => {
+          if (!old) return old as unknown as GetTasksResponse;
+          return {
+            ...(old as GetTasksResponse),
+            tasks: ((old as GetTasksResponse).tasks ?? []).map((t) => (t.id === taskId ? { ...t, done: newDone } as Task : t)),
+          } as GetTasksResponse;
+        });
+      });
+
+      return { previousFlat, previousPaginated } as const;
     },
     onError: (_err, _vars, context) => {
       if (!userEmail) return;
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.tasks(userEmail), context.previous);
+      // Restore flat list
+      if (context?.previousFlat) {
+        queryClient.setQueryData(queryKeys.tasks(userEmail), context.previousFlat);
+      }
+      // Restore each paginated page
+      if (context?.previousPaginated) {
+        context.previousPaginated.forEach(([key, data]) => {
+          queryClient.setQueryData(key as readonly unknown[], data);
+        });
       }
     },
     onSettled: () => {
       if (!userEmail) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasksPaginated(userEmail, 0, 10) });
+      queryClient.invalidateQueries({ queryKey: ["tasks-paginated", userEmail] });
     },
   });
 }
