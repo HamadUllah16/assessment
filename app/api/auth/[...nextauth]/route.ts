@@ -35,11 +35,8 @@ const handler = NextAuth({
       async signIn({ user, account }) {
           if (account?.provider === "google" && user?.email && user?.name) {
               try {
-                  const response = await fetch(URL_CONSTANTS.createOrUpdateUser, {
-                      method: "POST",
-                      headers: {
-                          "Content-Type": "application/json",
-                      },
+                const response = await fetch(`${process.env.NEXTAUTH_URL}${URL_CONSTANTS.createOrUpdateUser}`, {
+                  method: "POST",
                       body: JSON.stringify({
                           googleId: user.id,
                           email: user.email,
