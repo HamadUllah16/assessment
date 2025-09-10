@@ -5,6 +5,7 @@ import { URL_CONSTANTS } from "@/app/lib/url-constants";
 
 export const queryKeys = {
   tasks: (userEmail: string | undefined) => ["tasks", userEmail] as const,
+  tasksPaginated: (userEmail: string | undefined, page: number, pageSize: number) => ["tasks-paginated", userEmail, page, pageSize] as const,
 };
 
 async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
@@ -17,7 +18,7 @@ async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   return data as T;
 }
 
-type GetTasksResponse = { success: true; tasks: Task[] };
+type GetTasksResponse = { success: true; tasks: Task[]; total?: number };
 type CreateTaskResponse = { success: true; task: Task };
 type UpdateTaskResponse = { success: true; task: Task };
 
@@ -31,6 +32,19 @@ export function useTasks(userEmail: string | undefined) {
       return data.tasks;
     },
     enabled: Boolean(userEmail),
+  });
+}
+
+export function useTasksPaginated(userEmail: string | undefined, page: number, pageSize = 10) {
+  return useQuery<GetTasksResponse>({
+    queryKey: queryKeys.tasksPaginated(userEmail, page, pageSize),
+    enabled: Boolean(userEmail),
+    queryFn: async () => {
+      if (!userEmail) return { success: true, tasks: [] as Task[], total: 0 };
+      const url = `${URL_CONSTANTS.tasks}?userEmail=${encodeURIComponent(userEmail)}&limit=${pageSize}&page=${page}`;
+      const data = await fetchJson<GetTasksResponse>(url);
+      return data;
+    },
   });
 }
 
@@ -71,6 +85,7 @@ export function useCreateTask(userEmail: string | undefined) {
     onSettled: () => {
       if (!userEmail) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasksPaginated(userEmail, 0, 10) });
     },
   });
 }
@@ -105,6 +120,7 @@ export function useToggleTask(userEmail: string | undefined) {
     onSettled: () => {
       if (!userEmail) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasksPaginated(userEmail, 0, 10) });
     },
   });
 }

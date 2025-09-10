@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTasks, createTask } from "@/app/lib/task";
+import { createTask } from "@/app/lib/task";
 import { prisma } from "@/app/lib/prisma";
 
 // GET /api/tasks - Get all tasks for a user
@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const userEmail = searchParams.get('userEmail');
+        const limitParam = searchParams.get('limit');
+        const pageParam = searchParams.get('page');
 
         if (!userEmail) {
             return NextResponse.json(
@@ -17,17 +19,28 @@ export async function GET(request: NextRequest) {
         const user = await prisma.user.findUnique({ where: { email: userEmail } });
         if (!user) {
             return NextResponse.json(
-                { success: true, tasks: [] },
+                { success: true, tasks: [], total: 0 },
                 { status: 200 }
             );
         }
 
-        const tasks = await getTasks(user.id);
+        const take = Math.max(1, Math.min(Number(limitParam) || 10, 100));
+        const page = Math.max(0, Number(pageParam) || 0);
+
+        const where = { userId: user.id } as const;
+        const total = await prisma.task.count({ where });
+        const tasks = await prisma.task.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip: page * take,
+            take,
+        });
         
         return NextResponse.json(
             {
                 success: true,
-                tasks
+                tasks,
+                total
             },
             { status: 200 }
         );

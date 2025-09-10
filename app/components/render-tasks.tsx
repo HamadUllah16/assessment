@@ -1,15 +1,13 @@
 "use client";
 import React, { useState } from 'react'
-import { useCreateTask, useTasks, useToggleTask } from "@/app/lib/hooks/use-tasks";
+import { useCreateTask, useTasksPaginated, useToggleTask } from "@/app/lib/hooks/use-tasks";
 import {
     Typography,
     List,
     ListItem,
     ListItemText,
     ListItemSecondaryAction,
-    Box,
     Chip,
-    CircularProgress,
     Checkbox,
     Stack,
     IconButton,
@@ -21,8 +19,6 @@ import {
     Button,
     Snackbar,
     Alert,
-    Input,
-    InputLabel,
     InputAdornment,
     Skeleton,
 } from "@mui/material";
@@ -33,7 +29,11 @@ type RenderTasksProps = {
 }
 
 function RenderTasks({ userEmail }: RenderTasksProps) {
-    const { data: tasks = [], isLoading } = useTasks(userEmail);
+    const [page, setPage] = useState(0);
+    const pageSize = 10;
+    const { data, isLoading } = useTasksPaginated(userEmail, page, pageSize);
+    const tasks = (data?.tasks ?? []) as { id: string; title: string; done: boolean; userId: string; createdAt: Date }[];
+    const total = data?.total ?? tasks.length;
     const createTaskMutation = useCreateTask(userEmail);
     const toggleTaskMutation = useToggleTask(userEmail);
     const loading = isLoading || createTaskMutation.isPending || toggleTaskMutation.isPending;
@@ -62,7 +62,7 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
         setSnackbar({ open: true, message, severity });
     };
 
-    const filteredTasks = tasks.filter(task => task.title.toLowerCase().includes(search.toLowerCase()));
+    const filteredTasks = tasks.filter((task) => task.title.toLowerCase().includes(search.toLowerCase()));
 
     const toggleTask = async (taskId: string, currentDone: boolean) => {
         try {
@@ -75,9 +75,9 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
     };
     return (
         <Stack
-        height={"100%"}
-        gap={0}
-        overflow={"auto"}
+            height={"100%"}
+            gap={0}
+            overflow={"auto"}
         >
             <Stack
                 direction="row"
@@ -94,7 +94,7 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
             >
                 <Stack direction="row" alignItems="center" gap={1}>
                     <Typography variant="h6">Tasks</Typography>
-                    <Chip sx={{ width: 30, height: 30 }} label={filteredTasks.length} color="primary" size="small" />
+                    <Chip sx={{ height: 30 }} label={`${filteredTasks.length} / ${total || 0}`} color="primary" size="small" />
                 </Stack>
 
                 <TextField
@@ -103,7 +103,6 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     size="small"
-                    
                     slotProps={{
                         input: {
                             startAdornment: <InputAdornment position="start">
@@ -168,7 +167,8 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                         display: "flex",
                         flexDirection: "column",
                         gap: 2,
-                        overflow: "auto"
+                                overflow: "auto",
+                                flexGrow: 1
                     }}
                 >
                     {filteredTasks.map((task) => (
@@ -219,6 +219,36 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                     ))}
                 </List>
             )}
+            <Stack
+                direction="row"
+                justifyContent="space-between" alignItems="center"
+                px={4}
+                pb={2}
+                position={"sticky"}
+                bottom={0}
+                zIndex={10}
+                bgcolor={"white"}
+            >
+                <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={page <= 0}
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                >
+                    Previous
+                </Button>
+                <Typography variant="caption">
+                    Page {page + 1} of {Math.max(1, Math.ceil((total || 0) / pageSize))}
+                </Typography>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={(page + 1) * pageSize >= (total || 0)}
+                    onClick={() => setPage(p => p + 1)}
+                >
+                    Next
+                </Button>
+            </Stack>
             <Dialog open={isDialogOpen} onClose={() => !loading && setIsDialogOpen(false)} fullWidth maxWidth="sm">
                 <DialogTitle>Create Task</DialogTitle>
                 <DialogContent>
