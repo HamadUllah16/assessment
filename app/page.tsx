@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
   AppBar,
   Toolbar,
@@ -33,107 +33,38 @@ import {
 } from "@mui/icons-material";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Task } from "@/app/lib/task";
+import { useCreateTask, useTasks, useToggleTask } from "@/app/lib/hooks/use-tasks";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(false);
+  const userEmail = session?.user?.email ?? undefined;
+  const { data: tasks = [], isLoading } = useTasks(userEmail);
+  const createTaskMutation = useCreateTask(userEmail);
+  const toggleTaskMutation = useToggleTask(userEmail);
+  const loading = isLoading || createTaskMutation.isPending || toggleTaskMutation.isPending;
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
   const [showCompleted, setShowCompleted] = useState(true);
 
-  const fetchTasks = useCallback(async () => {
-    if (!session?.user?.email) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/tasks?userEmail=${session.user.email}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setTasks(data.tasks);
-      } else {
-        showSnackbar("Failed to fetch tasks", "error");
-      }
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      showSnackbar("Error fetching tasks", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.email]);
-
-  // Fetch tasks when user is authenticated
-  useEffect(() => {
-    if (session?.user?.email) {
-      fetchTasks();
-    }
-  }, [session, fetchTasks]);
+  // Data fetching now handled by React Query
 
   const createTask = async () => {
-    if (!newTaskTitle.trim() || !session?.user?.email) return;
-
-    setLoading(true);
+    if (!newTaskTitle.trim() || !userEmail) return;
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: newTaskTitle.trim(),
-          userEmail: session.user.email,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTasks([data.task, ...tasks]);
-        setNewTaskTitle("");
-        showSnackbar("Task created successfully!", "success");
-      } else {
-        showSnackbar(data.error || "Failed to create task", "error");
-      }
-    } catch (error) {
-      console.error("Error creating task:", error);
-      showSnackbar("Error creating task", "error");
-    } finally {
-      setLoading(false);
+      await createTaskMutation.mutateAsync(newTaskTitle.trim());
+      setNewTaskTitle("");
+      showSnackbar("Task created successfully!", "success");
+    } catch (e: any) {
+      showSnackbar(e?.message || "Failed to create task", "error");
     }
   };
 
   const toggleTask = async (taskId: string, currentDone: boolean) => {
-    setLoading(true);
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          done: !currentDone,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTasks(tasks.map(task =>
-          task.id === taskId ? { ...task, done: !currentDone } : task
-        ));
-        showSnackbar(
-          !currentDone ? "Task marked as done!" : "Task marked as pending",
-          "success"
-        );
-      } else {
-        showSnackbar(data.error || "Failed to update task", "error");
-      }
-    } catch (error) {
-      console.error("Error updating task:", error);
-      showSnackbar("Error updating task", "error");
-    } finally {
-      setLoading(false);
+      await toggleTaskMutation.mutateAsync({ taskId, currentDone });
+      showSnackbar(!currentDone ? "Task marked as done!" : "Task marked as pending", "success");
+    } catch (e: any) {
+      showSnackbar(e?.message || "Failed to update task", "error");
     }
   };
 

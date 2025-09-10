@@ -8,6 +8,7 @@ import "./globals.css";
 import EmotionRegistry from './registry';
 import MuiThemeProvider from './theme-provider';
 import AuthProvider from './auth-provider';
+import ReactQueryProvider from './react-query-provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,9 +37,11 @@ export default function RootLayout({
       >
         <EmotionRegistry>
           <AuthProvider>
-            <MuiThemeProvider>
-              {children}
-            </MuiThemeProvider>
+            <ReactQueryProvider>
+              <MuiThemeProvider>
+                {children}
+              </MuiThemeProvider>
+            </ReactQueryProvider>
           </AuthProvider>
         </EmotionRegistry>
       </body>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasks, createTask } from "@/app/lib/task";
+import { prisma } from "@/app/lib/prisma";
 
 // GET /api/tasks - Get all tasks for a user
 export async function GET(request: NextRequest) {
@@ -13,8 +14,15 @@ export async function GET(request: NextRequest) {
                 { status: 400 }
             );
         }
+        const user = await prisma.user.findUnique({ where: { email: userEmail } });
+        if (!user) {
+            return NextResponse.json(
+                { success: true, tasks: [] },
+                { status: 200 }
+            );
+        }
 
-        const tasks = await getTasks(userEmail);
+        const tasks = await getTasks(user.id);
         
         return NextResponse.json(
             {
@@ -52,10 +60,17 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+        const user = await prisma.user.findUnique({ where: { email: body.userEmail } });
+        if (!user) {
+            return NextResponse.json(
+                { error: "User not found for provided email" },
+                { status: 404 }
+            );
+        }
 
         const task = await createTask({
             title: body.title.trim(),
-            userId: body.userEmail
+            userId: user.id
         });
 
         return NextResponse.json(
