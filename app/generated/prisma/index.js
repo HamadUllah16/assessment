@@ -140,7 +140,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\Work\\Assessment\\client\\my-app\\app\\generated\\prisma",
+      "value": "D:\\Work\\Assessment\\client\\my-app\\app\\generated\\app\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -151,15 +151,19 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\Work\\Assessment\\client\\my-app\\prisma\\schema.prisma",
+    "sourceFilePath": "D:\\Work\\Assessment\\client\\my-app\\app\\generated\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": "../../../../../.env",
+    "schemaEnvPath": "../../../../../.env"
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.15.0",
@@ -177,8 +181,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../app/generated/prisma\"\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel User {\n  id        String   @id @default(cuid())\n  googleId  String?\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  Task      Task[]\n}\n\nmodel Task {\n  id        String   @id @default(cuid())\n  userId    String\n  title     String\n  done      Boolean  @default(false)\n  createdAt DateTime @default(now())\n  user      User     @relation(fields: [userId], references: [id])\n}\n",
-  "inlineSchemaHash": "f48ba0bcb745300878e7f6be59eada34c62136489addd87f52985afec65d453d",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../app/generated/prisma\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel User {\n  id        String   @id @default(cuid())\n  googleId  String?\n  email     String   @unique\n  name      String?\n  createdAt DateTime @default(now())\n  Task      Task[]\n}\n\nmodel Task {\n  id        String   @id @default(cuid())\n  userId    String\n  title     String\n  done      Boolean  @default(false)\n  createdAt DateTime @default(now())\n  user      User     @relation(fields: [userId], references: [id])\n}\n",
+  "inlineSchemaHash": "5865bab645abf2df12d1abca67e50ea1bb27bb1c38c8c16cbadbb53811b45ead",
   "copyEngine": true
 }
 
@@ -187,8 +191,8 @@ const fs = require('fs')
 config.dirname = __dirname
 if (!fs.existsSync(path.join(__dirname, 'schema.prisma'))) {
   const alternativePaths = [
-    "app/generated/prisma",
-    "generated/prisma",
+    "app/generated/app/generated/prisma",
+    "generated/app/generated/prisma",
   ]
   
   const alternativePath = alternativePaths.find((altPath) => {
@@ -218,7 +222,11 @@ Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "app/generated/prisma/query_engine-windows.dll.node")
+path.join(process.cwd(), "app/generated/app/generated/prisma/query_engine-windows.dll.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-rhel-openssl-3.0.x.so.node");
+path.join(process.cwd(), "app/generated/app/generated/prisma/libquery_engine-rhel-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
-path.join(process.cwd(), "app/generated/prisma/schema.prisma")
+path.join(process.cwd(), "app/generated/app/generated/prisma/schema.prisma")
