@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -32,7 +32,7 @@ import {
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Task } from "@/app/lib/task";
+// Task type is used by hooks; keep import if referenced elsewhere
 import { useCreateTask, useTasks, useToggleTask } from "@/app/lib/hooks/use-tasks";
 
 export default function Home() {
@@ -54,8 +54,9 @@ export default function Home() {
       await createTaskMutation.mutateAsync(newTaskTitle.trim());
       setNewTaskTitle("");
       showSnackbar("Task created successfully!", "success");
-    } catch (e: any) {
-      showSnackbar(e?.message || "Failed to create task", "error");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to create task";
+      showSnackbar(message, "error");
     }
   };
 
@@ -63,8 +64,9 @@ export default function Home() {
     try {
       await toggleTaskMutation.mutateAsync({ taskId, currentDone });
       showSnackbar(!currentDone ? "Task marked as done!" : "Task marked as pending", "success");
-    } catch (e: any) {
-      showSnackbar(e?.message || "Failed to update task", "error");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to update task";
+      showSnackbar(message, "error");
     }
   };
 
