@@ -2,8 +2,17 @@
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { Poppins } from 'next/font/google';
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+});
 
 const theme = createTheme({
+  typography: {
+    fontFamily: poppins.style.fontFamily,
+  },
   palette: {
     mode: 'light',
   },
