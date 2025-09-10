@@ -22,19 +22,6 @@ type GetTasksResponse = { success: true; tasks: Task[]; total?: number };
 type CreateTaskResponse = { success: true; task: Task };
 type UpdateTaskResponse = { success: true; task: Task };
 
-export function useTasks(userEmail: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.tasks(userEmail),
-    queryFn: async () => {
-      if (!userEmail) return [] as Task[];
-      const url = `${URL_CONSTANTS.tasks}?userEmail=${encodeURIComponent(userEmail)}`;
-      const data = await fetchJson<GetTasksResponse>(url);
-      return data.tasks;
-    },
-    enabled: Boolean(userEmail),
-  });
-}
-
 export function useTasksPaginated(userEmail: string | undefined, page: number, pageSize = 10) {
   return useQuery<GetTasksResponse>({
     queryKey: queryKeys.tasksPaginated(userEmail, page, pageSize),
@@ -84,7 +71,6 @@ export function useCreateTask(userEmail: string | undefined) {
     },
     onSettled: () => {
       if (!userEmail) return;
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
       queryClient.invalidateQueries({ queryKey: ["tasks-paginated", userEmail] });
     },
   });
@@ -112,7 +98,6 @@ export function useToggleTask(userEmail: string | undefined) {
       ]);
 
       // Snapshot previous states
-      const previousFlat = queryClient.getQueryData<Task[]>(queryKeys.tasks(userEmail));
       const previousPaginated = queryClient.getQueriesData({ queryKey: ["tasks-paginated", userEmail] });
 
       // Optimistically update flat list
@@ -131,13 +116,13 @@ export function useToggleTask(userEmail: string | undefined) {
         });
       });
 
-      return { previousFlat, previousPaginated } as const;
+      return { previousPaginated } as const;
     },
     onError: (_err, _vars, context) => {
       if (!userEmail) return;
       // Restore flat list
-      if (context?.previousFlat) {
-        queryClient.setQueryData(queryKeys.tasks(userEmail), context.previousFlat);
+      if (context?.previousPaginated) {
+        queryClient.setQueryData(queryKeys.tasks(userEmail), context.previousPaginated);
       }
       // Restore each paginated page
       if (context?.previousPaginated) {
@@ -148,7 +133,6 @@ export function useToggleTask(userEmail: string | undefined) {
     },
     onSettled: () => {
       if (!userEmail) return;
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(userEmail) });
       queryClient.invalidateQueries({ queryKey: ["tasks-paginated", userEmail] });
     },
   });
