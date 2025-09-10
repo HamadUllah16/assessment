@@ -23,52 +23,27 @@ import {
     Skeleton,
 } from "@mui/material";
 import { Add, Search } from '@mui/icons-material';
+import TaskCard from './tasks/task-card';
+import TaskCreateDialog from './tasks/task-create-dialog';
 
 type RenderTasksProps = {
     userEmail: string;
 }
 
-function timeAgo(input: string | Date): string {
-    const date = typeof input === 'string' ? new Date(input) : input;
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-
-    const divisions: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
-        { amount: 60, name: 'second' },
-        { amount: 60, name: 'minute' },
-        { amount: 24, name: 'hour' },
-        { amount: 7, name: 'day' },
-        { amount: 4.34524, name: 'week' },
-        { amount: 12, name: 'month' },
-        { amount: Number.POSITIVE_INFINITY, name: 'year' }
-    ];
-
-    let duration = seconds;
-    for (let i = 0; i < divisions.length; i++) {
-        const division = divisions[i];
-        if (Math.abs(duration) < division.amount) {
-            return rtf.format(-Math.round(duration), division.name);
-        }
-        duration = duration / division.amount;
-    }
-    return rtf.format(0, 'second');
-}
-
 function RenderTasks({ userEmail }: RenderTasksProps) {
     const [page, setPage] = useState(0);
     const pageSize = 4;
-    const { data, isLoading } = useTasksPaginated(userEmail, page, pageSize);
-    const tasks = (data?.tasks ?? []) as { id: string; title: string; done: boolean; userId: string; createdAt: Date }[];
-    const total = data?.total ?? tasks.length;
-    const createTaskMutation = useCreateTask(userEmail);
-    const toggleTaskMutation = useToggleTask(userEmail);
-    const loading = isLoading || createTaskMutation.isPending || toggleTaskMutation.isPending;
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" as "success" | "error" });
     const [showCompleted] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const createTaskMutation = useCreateTask(userEmail);
+    const toggleTaskMutation = useToggleTask(userEmail);
+    const { data, isLoading } = useTasksPaginated(userEmail, page, pageSize);
+    const tasks = (data?.tasks ?? []) as { id: string; title: string; done: boolean; userId: string; createdAt: Date }[];
+    const total = data?.total ?? tasks.length;
+    const loading = isLoading || createTaskMutation.isPending || toggleTaskMutation.isPending;
     // Data fetching now handled by React Query
 
     const createTask = async () => {
@@ -169,7 +144,7 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                         sx={{ borderRadius: 1 }}
                     />
                 </Stack>
-            ) : filteredTasks.length === 0 ? (
+            ) : filteredTasks.length === 0 && tasks.length === 0 ? (
                 <Stack
                     justifyContent={"center"}
                     alignItems={"center"}
@@ -199,50 +174,12 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                     }}
                 >
                     {filteredTasks.map((task) => (
-                        <React.Fragment key={task.id}>
-                            <ListItem
-                                sx={{
-                                    backgroundColor: task.done ? "#f8f9fa" : "white",
-                                    opacity: task.done ? 0.7 : 1,
-                                    borderRadius: 1,
-                                    border: "1px solid #e0e0e0",
-                                }}
-                            >
-                                <Checkbox
-                                    checked={task.done}
-                                    onChange={() => toggleTask(task.id, task.done)}
-                                    disabled={loading}
-                                    sx={{ mr: 2 }}
-                                />
-
-                                <ListItemText
-                                    primary={
-                                        <Typography
-                                            variant="body1"
-                                            sx={{
-                                                textDecoration: task.done ? "line-through" : "none",
-                                                color: task.done ? "text.secondary" : "text.primary",
-                                                fontWeight: 500
-                                            }}
-                                        >
-                                            {task.title}
-                                        </Typography>
-                                    }
-                                    secondary={
-                                        <Typography variant="caption" color="text.secondary">
-                                            {timeAgo(task.createdAt)}
-                                        </Typography>
-                                    }
-                                />
-                                <ListItemSecondaryAction>
-                                    <Chip
-                                        label={task.done ? "Done" : "Pending"}
-                                        color={task.done ? "success" : "warning"}
-                                        size="small"
-                                    />
-                                </ListItemSecondaryAction>
-                            </ListItem>
-                        </React.Fragment>
+                        <TaskCard
+                            key={task.id}
+                            task={task}
+                            toggleTask={toggleTask}
+                            loading={loading}
+                        />
                     ))}
                 </List>
             )}
@@ -276,33 +213,16 @@ function RenderTasks({ userEmail }: RenderTasksProps) {
                     Next
                 </Button>
             </Stack>
-            <Dialog open={isDialogOpen} onClose={() => !loading && setIsDialogOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle>Create Task</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Task title"
-                        type="text"
-                        fullWidth
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && newTaskTitle.trim() && !loading) {
-                                e.preventDefault();
-                                createTask();
-                            }
-                        }}
-                        disabled={loading}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsDialogOpen(false)} disabled={loading}>Cancel</Button>
-                    <Button onClick={createTask} variant="contained" disabled={!newTaskTitle.trim() || loading}>
-                        {loading ? 'Creating…' : 'Create'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+
+            <TaskCreateDialog
+                createTask={createTask}
+                isDialogOpen={isDialogOpen}
+                setIsDialogOpen={setIsDialogOpen}
+                loading={loading}
+                newTaskTitle={newTaskTitle}
+                setNewTaskTitle={setNewTaskTitle}
+            />
+
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={2500}
